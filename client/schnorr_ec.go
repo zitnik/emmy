@@ -60,6 +60,46 @@ func NewSchnorrECClient(conn *grpc.ClientConn, variant pb.SchemaVariant, curve g
 	}, nil
 }
 
+// NewSchnorrECMobileClient will create a SchnorrECClient instance just like NewSchnorrECClient,
+// however it only accepts string arguments compatible with gomobile bind.
+func NewSchnorrECMobileClient(endpoint, variant,
+	secret string) (*SchnorrECClient, error) {
+	genericClient, err := newGenericClient(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	v, err := common.FromStringToProtocolType(variant)
+	if err != nil {
+		return nil, err
+	}
+	vPb, _ := common.FromStringToPbType(variant)
+
+	prover, err := dlogproofs.NewSchnorrECProver(v)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create schnorr EC prover: %v", err)
+	}
+
+	s, _ := new(big.Int).SetString(secret, 10)
+	if s == nil {
+		return nil, fmt.Errorf("Error converting secret to big.Int")
+	}
+
+	// Note that this is only temporary, the EC type will have to be passed from outside
+	ec_dlog := dlog.NewECDLog()
+
+	return &SchnorrECClient{
+		genericClient: *genericClient,
+		prover:        prover,
+		variant:       vPb,
+		secret:        s,
+		a: &common.ECGroupElement{
+			X: ec_dlog.Curve.Params().Gx,
+			Y: ec_dlog.Curve.Params().Gy,
+		},
+	}, nil
+}
+
 // Run starts the Schnorr protocol for proving knowledge of a discrete logarithm in elliptic curve
 // group. It executes either sigma protocol or Zero Knowledge Proof (of knowledge)
 func (c *SchnorrECClient) Run() error {

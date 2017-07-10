@@ -46,6 +46,26 @@ func NewPedersenECClient(conn *grpc.ClientConn, v *big.Int, curveType groups.ECu
 	}, nil
 }
 
+// NewPedersenECMobileClient will create a PedersenECClient instance just like
+// NewPedersenECClient, however it only accepts string arguments compatible with gomobile bind.
+func NewPedersenECMobileClient(endpoint, val string) (*PedersenECClient, error) {
+	genericClient, err := newGenericClient(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	v, _ := new(big.Int).SetString(val, 10)
+	if v == nil {
+		return nil, fmt.Errorf("Error converting string argument to big.Int")
+	}
+
+	return &PedersenECClient{
+		pedersenCommonClient: pedersenCommonClient{genericClient: *genericClient},
+		committer:            commitments.NewPedersenECCommitter(),
+		val:                  v,
+	}, nil
+}
+
 // Run runs Pedersen commitment protocol in the eliptic curve group.
 func (c *PedersenECClient) Run() error {
 	c.openStream()

@@ -48,6 +48,31 @@ func NewPedersenClient(conn *grpc.ClientConn, variant pb.SchemaVariant, dlog *gr
 	}, nil
 }
 
+// NewPedersenMobileClient will create a PedersenClient instance just like the NewPedersenClient,
+// however it only accepts string arguments compatible with gomobile bind.
+func NewPedersenMobileClient(endpoint, variant, dlogP, dlogG, dlogO, val string) (*PedersenClient, error) {
+	genericClient, err := newGenericClient(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	p, _ := new(big.Int).SetString(dlogP, 10)
+	g, _ := new(big.Int).SetString(dlogG, 10)
+	o, _ := new(big.Int).SetString(dlogO, 10)
+	v, _ := new(big.Int).SetString(val, 10)
+	if p == nil || g == nil || o == nil || v == nil {
+		return nil, fmt.Errorf("Error converting string arguments to big.Int")
+	}
+
+	dlog := dlog.NewZpDLog(p, g, o)
+
+	return &PedersenClient{
+		pedersenCommonClient: pedersenCommonClient{genericClient: *genericClient},
+		committer:            commitments.NewPedersenCommitter(dlog),
+		val:                  v,
+	}, nil
+}
+
 // Run runs Pedersen commitment protocol in multiplicative group of integers modulo p.
 func (c *PedersenClient) Run() error {
 	c.openStream()

@@ -52,6 +52,40 @@ func NewSchnorrClient(conn *grpc.ClientConn, variant pb.SchemaVariant, group *gr
 	}, nil
 }
 
+// NewSchnorrMobileClient will create a SchnorrClient instance just like NewSchnorrClient,
+// however it only accepts string arguments compatible with gomobile bind.
+func NewSchnorrMobileClient(endpoint, variant, dlogP, dlogG, dlogO,
+	secret string) (*SchnorrClient, error) {
+	genericClient, err := newGenericClient(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	p, _ := new(big.Int).SetString(dlogP, 10)
+	g, _ := new(big.Int).SetString(dlogG, 10)
+	o, _ := new(big.Int).SetString(dlogO, 10)
+	s, _ := new(big.Int).SetString(secret, 10)
+	if p == nil || g == nil || o == nil || s == nil {
+		return nil, fmt.Errorf("Error converting string arguments to big.Int")
+	}
+
+	dlog := dlog.NewZpDLog(p, g, o)
+	v, err := common.FromStringToProtocolType(variant)
+	if err != nil {
+		return nil, err
+	}
+
+	vPb, _ := common.FromStringToPbType(variant)
+
+	return &SchnorrClient{
+		genericClient: *genericClient,
+		variant:       vPb,
+		prover:        dlogproofs.NewSchnorrProver(dlog, v),
+		secret:        s,
+		a:             dlog.G, // fix !!!
+	}, nil
+}
+
 // Run starts the Schnorr protocol for proving knowledge of a discrete logarithm in multiplicative
 // group of integers modulo p. It executes either sigma protocol or Zero Knowledge Proof(of
 // knowledge)
