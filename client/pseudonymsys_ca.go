@@ -45,6 +45,46 @@ func NewPseudonymsysCAClient(conn *grpc.ClientConn) (*PseudonymsysCAClient, erro
 	}, nil
 }
 
+type CACertificateStr struct {
+	BlindedA string
+	BlindedB string
+	R        string
+	S        string
+}
+
+func NewCACertificateStr(blindedA, blindedB, r, s string) *CACertificateStr {
+	return &CACertificateStr{
+		BlindedA: blindedA,
+		BlindedB: blindedB,
+		R:        r,
+		S:        s,
+	}
+}
+
+func (c *PseudonymsysCAClient) GetCertificate(userSecret, pseudonymA,
+	pseudonymB string) (*CACertificateStr, error) {
+	secret, _ := new(big.Int).SetString(userSecret, 10)
+	a, _ := new(big.Int).SetString(pseudonymA, 10)
+	b, _ := new(big.Int).SetString(pseudonymB, 10)
+	if secret == nil || a == nil || b == nil {
+		return nil, fmt.Errorf("Error converting string arguments to big.Int")
+	}
+
+	pseudonym := pseudonymsys.NewPseudonym(a, b)
+	cert, err := c.ObtainCertificate(secret, pseudonym)
+	if err != nil {
+		return nil, err
+	}
+
+	certStr := NewCACertificateStr(
+		cert.BlindedA.String(),
+		cert.BlindedB.String(),
+		cert.R.String(),
+		cert.S.String())
+
+	return certStr, nil
+}
+
 // ObtainCertificate provides a certificate from trusted CA to the user. Note that CA
 // needs to know the user. The certificate is then used for registering pseudonym (nym).
 // The certificate contains blinded user's master key pair and a signature of it.
