@@ -110,7 +110,3 @@ func getStream(client pb.ProtocolClient) (pb.Protocol_RunClient, error) {
 	}
 	return stream, nil
 }
-
-func SetConfigFromBuffer(content []byte) error {
-	return config.LoadCustomConfigFromBuffer(content)
-}

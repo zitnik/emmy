@@ -243,6 +243,7 @@ func (s *Server) PseudonymsysTransferCredential(req *pb.Message, stream pb.Proto
 	z := new(big.Int).SetBytes(proofData.X1)
 
 	verified := org.VerifyAuthentication(z, credential, orgPubKeys)
+	logger.Debugf("VERIFIED: ", verified)
 
 	resp = &pb.Message{}
 	// If something went wrong (either user was not authenticated or secure session key could not
