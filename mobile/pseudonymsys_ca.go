@@ -3,25 +3,31 @@ package mobile
 import (
 	"fmt"
 	"github.com/xlab-si/emmy/client"
-	"github.com/xlab-si/emmy/pseudonymsys"
+	"github.com/xlab-si/emmy/crypto/zkp/schemes/pseudonymsys"
 	"math/big"
 )
 
-type PseudonymsysCAClientWrapper struct {
+type PseudonymsysCAClient struct {
 	client *client.PseudonymsysCAClient
 }
 
-func NewPseudonymsysCAClientWrapper(endpoint string) (*PseudonymsysCAClientWrapper, error) {
-	c, err := client.NewPseudonymsysCAClient(endpoint)
+func NewPseudonymsysCAClientWrapper(endpoint string) (*PseudonymsysCAClient, error) {
+	conn, err := client.GetConnection(endpoint, "", true)
 	if err != nil {
 		return nil, err
 	}
-	return &PseudonymsysCAClientWrapper{
+
+	c, err := client.NewPseudonymsysCAClient(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PseudonymsysCAClient{
 		client: c,
 	}, nil
 }
 
-func (c *PseudonymsysCAClientWrapper) ObtainCertificate(userSecret, pseudonymA,
+func (c *PseudonymsysCAClient) ObtainCertificate(userSecret, pseudonymA,
 	pseudonymB string) (*CACertificate, error) {
 	secret, _ := new(big.Int).SetString(userSecret, 10)
 	a, _ := new(big.Int).SetString(pseudonymA, 10)

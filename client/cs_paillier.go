@@ -50,34 +50,6 @@ func NewCSPaillierClient(conn *grpc.ClientConn, pubKeyPath string, m, l *big.Int
 	}, nil
 }
 
-// NewCSPaillierMobileClient will create a CSPaillierClient instance just like NewCSPaillierClient,
-// however it only accepts string arguments compatible with gomobile bind.
-func NewCSPaillierMobileClient(endpoint, pubKeyPath, m, l string) (*CSPaillierClient, error) {
-	genericClient, err := newGenericClient(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Debug(pubKeyPath)
-	encryptor, err := encryption.NewCSPaillierFromPubKeyFile(pubKeyPath)
-	if err != nil {
-		return nil, err
-	}
-
-	mBig, _ := new(big.Int).SetString(m, 10)
-	lBig, _ := new(big.Int).SetString(l, 10)
-	if mBig == nil || lBig == nil {
-		return nil, fmt.Errorf("Error converting string arguments to big.Int")
-	}
-
-	return &CSPaillierClient{
-		genericClient: *genericClient,
-		encryptor:     encryptor,
-		m:             mBig,
-		label:         lBig,
-	}, nil
-}
-
 // Run runs the Camenisch-Shoup sigma protocol for verifiable encryption and decryption
 // of discrete logatirhms.
 func (c *CSPaillierClient) Run() error {

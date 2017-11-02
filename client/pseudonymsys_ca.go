@@ -18,6 +18,7 @@
 package client
 
 import (
+	"fmt"
 	"github.com/xlab-si/emmy/config"
 	"github.com/xlab-si/emmy/crypto/zkp/primitives/dlogproofs"
 	"github.com/xlab-si/emmy/crypto/zkp/schemes/pseudonymsys"

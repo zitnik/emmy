@@ -3,25 +3,32 @@ package mobile
 import (
 	"fmt"
 	"github.com/xlab-si/emmy/client"
-	"github.com/xlab-si/emmy/pseudonymsys"
+	"github.com/xlab-si/emmy/crypto/zkp/primitives/dlogproofs"
+	"github.com/xlab-si/emmy/crypto/zkp/schemes/pseudonymsys"
 	"math/big"
 )
 
-type PseudonymsysClientWrapper struct {
+type PseudonymsysClient struct {
 	client *client.PseudonymsysClient
 }
 
-func NewPseudonymsysClientWrapper(endpoint string) (*PseudonymsysClientWrapper, error) {
-	c, err := client.NewPseudonymsysClient(endpoint)
+func NewPseudonymsysClient(endpoint string) (*PseudonymsysClient, error) {
+	conn, err := client.GetConnection(endpoint, "", true)
 	if err != nil {
 		return nil, err
 	}
-	return &PseudonymsysClientWrapper{
+
+	c, err := client.NewPseudonymsysClient(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PseudonymsysClient{
 		client: c,
 	}, nil
 }
 
-func (c *PseudonymsysClientWrapper) GenerateNym(userSecret string,
+func (c *PseudonymsysClient) GenerateNym(userSecret string,
 	cert *CACertificate) (*Pseudonym, error) {
 	secret, _ := new(big.Int).SetString(userSecret, 10)
 	blindedA, _ := new(big.Int).SetString(cert.BlindedA, 10)
@@ -41,7 +48,7 @@ func (c *PseudonymsysClientWrapper) GenerateNym(userSecret string,
 	return NewPseudonym(nym.A.String(), nym.B.String()), nil
 }
 
-func (c *PseudonymsysClientWrapper) ObtainCredential(userSecret string,
+func (c *PseudonymsysClient) ObtainCredential(userSecret string,
 	nymStr *Pseudonym, pubKeys *OrgPubKeys) (*Credential, error) {
 	secret, _ := new(big.Int).SetString(userSecret, 10)
 	a, _ := new(big.Int).SetString(nymStr.A, 10)
@@ -59,13 +66,17 @@ func (c *PseudonymsysClientWrapper) ObtainCredential(userSecret string,
 		return nil, err
 	}
 
-	n := len(credential.T1)
-	t1 := make([]string, n)
-	t2 := make([]string, n)
-	for i, v := range credential.T1 {
-		t1[i] = v.String()
-		t2[i] = v.String()
-	}
+	t1 := NewTranscript(
+		credential.T1.A.String(),
+		credential.T1.B.String(),
+		credential.T1.Hash.String(),
+		credential.T1.ZAlpha.String())
+
+	t2 := NewTranscript(
+		credential.T2.A.String(),
+		credential.T2.B.String(),
+		credential.T2.Hash.String(),
+		credential.T2.ZAlpha.String())
 
 	return NewCredential(
 		credential.SmallAToGamma.String(),
@@ -76,31 +87,41 @@ func (c *PseudonymsysClientWrapper) ObtainCredential(userSecret string,
 		t2), nil
 }
 
-func (c *PseudonymsysClientWrapper) TransferCredential(orgName, userSecret string,
-	nymStr *Pseudonym, credentialStr *Credential) (bool, error) {
+func (c *PseudonymsysClient) TransferCredential(orgName, userSecret string,
+	nymStr *Pseudonym, credential *Credential) (bool, error) {
 	secret, _ := new(big.Int).SetString(userSecret, 10)
 	a, _ := new(big.Int).SetString(nymStr.A, 10)
 	b, _ := new(big.Int).SetString(nymStr.B, 10)
-	atG, _ := new(big.Int).SetString(credentialStr.SmallAToGamma, 10)
-	btG, _ := new(big.Int).SetString(credentialStr.SmallBToGamma, 10)
-	AtG, _ := new(big.Int).SetString(credentialStr.AToGamma, 10)
-	BtG, _ := new(big.Int).SetString(credentialStr.BToGamma, 10)
+	atG, _ := new(big.Int).SetString(credential.SmallAToGamma, 10)
+	btG, _ := new(big.Int).SetString(credential.SmallBToGamma, 10)
+	AtG, _ := new(big.Int).SetString(credential.AToGamma, 10)
+	BtG, _ := new(big.Int).SetString(credential.BToGamma, 10)
 	if secret == nil || a == nil || b == nil || atG == nil || btG == nil ||
 		AtG == nil || BtG == nil {
 		return false, fmt.Errorf("Error converting string arguments to big.Int")
 	}
 
-	n := len(credentialStr.T1)
-	t1 := make([]*big.Int, n)
-	t2 := make([]*big.Int, n)
-	for i, v := range credentialStr.T1 {
-		t1[i], _ = new(big.Int).SetString(v, 10)
-		t2[i], _ = new(big.Int).SetString(v, 10)
+	t1_a, _ := new(big.Int).SetString(credential.T1.A, 10)
+	t1_b, _ := new(big.Int).SetString(credential.T1.B, 10)
+	t1_hash, _ := new(big.Int).SetString(credential.T1.Hash, 10)
+	t1_zAlpha, _ := new(big.Int).SetString(credential.T1.ZAlpha, 10)
+	if t1_a == nil || t1_b == nil || t1_hash == nil || t1_zAlpha == nil {
+		return false, fmt.Errorf("Transcript 1; Error converting string arguments to big.Int")
 	}
+	t1 := dlogproofs.NewTranscript(t1_a, t1_b, t1_hash, t1_zAlpha)
+
+	t2_a, _ := new(big.Int).SetString(credential.T2.A, 10)
+	t2_b, _ := new(big.Int).SetString(credential.T2.B, 10)
+	t2_hash, _ := new(big.Int).SetString(credential.T2.Hash, 10)
+	t2_zAlpha, _ := new(big.Int).SetString(credential.T2.ZAlpha, 10)
+	if t2_a == nil || t2_b == nil || t2_hash == nil || t2_zAlpha == nil {
+		return false, fmt.Errorf("Transcript 2; Error converting string arguments to big.Int")
+	}
+	t2 := dlogproofs.NewTranscript(t2_a, t2_b, t2_hash, t2_zAlpha)
 
 	pseudonym := pseudonymsys.NewPseudonym(a, b)
-	credential := pseudonymsys.NewCredential(atG, btG, AtG, BtG, t1, t2)
-	authenticated, err := c.client.TransferCredential(orgName, secret, pseudonym, credential)
+	cred := pseudonymsys.NewCredential(atG, btG, AtG, BtG, t1, t2)
+	authenticated, err := c.client.TransferCredential(orgName, secret, pseudonym, cred)
 	if err != nil {
 		return false, err
 	}
