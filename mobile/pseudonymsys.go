@@ -5,11 +5,13 @@ import (
 	"github.com/xlab-si/emmy/client"
 	"github.com/xlab-si/emmy/crypto/zkp/primitives/dlogproofs"
 	"github.com/xlab-si/emmy/crypto/zkp/schemes/pseudonymsys"
+	"google.golang.org/grpc"
 	"math/big"
 )
 
 type PseudonymsysClient struct {
 	client *client.PseudonymsysClient
+	conn   *grpc.ClientConn
 }
 
 func NewPseudonymsysClient(endpoint string) (*PseudonymsysClient, error) {
@@ -25,6 +27,7 @@ func NewPseudonymsysClient(endpoint string) (*PseudonymsysClient, error) {
 
 	return &PseudonymsysClient{
 		client: c,
+		conn:   conn,
 	}, nil
 }
 
@@ -127,4 +130,9 @@ func (c *PseudonymsysClient) TransferCredential(orgName, userSecret string,
 	}
 
 	return authenticated, nil
+}
+
+// Disconnect attempts to close the underlying client connection to gRPC server.
+func (c *PseudonymsysClient) Disconnect() error {
+	return c.conn.Close()
 }
