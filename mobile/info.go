@@ -2,10 +2,9 @@ package mobile
 
 import (
 	"github.com/xlab-si/emmy/client"
-	"github.com/xlab-si/emmy/types"
 )
 
-func GetServiceInfo(endpoint string) (*types.ServiceInfo, error) {
+func GetServiceInfo(endpoint string) (*ServiceInfo, error) {
 	conn, err := client.GetConnection(endpoint, "", true)
 	if err != nil {
 		return nil, err
@@ -16,5 +15,6 @@ func GetServiceInfo(endpoint string) (*types.ServiceInfo, error) {
 		return nil, err
 	}
 
-	return info, nil
+	serviceInfo := NewServiceInfo(info.Name, info.Description, info.Provider)
+	return serviceInfo, nil
 }

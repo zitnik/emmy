@@ -77,3 +77,17 @@ func NewTranscript(a, b, hash, zAlpha string) *Transcript {
 		ZAlpha: zAlpha,
 	}
 }
+
+type ServiceInfo struct {
+	Name        string
+	Description string
+	Provider    string
+}
+
+func NewServiceInfo(name, description, provider string) *ServiceInfo {
+	return &ServiceInfo{
+		Name:        name,
+		Description: description,
+		Provider:    provider,
+	}
+}
