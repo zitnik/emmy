@@ -11,7 +11,7 @@ type PseudonymsysCAClient struct {
 	client *client.PseudonymsysCAClient
 }
 
-func NewPseudonymsysCAClientWrapper(endpoint string) (*PseudonymsysCAClient, error) {
+func NewPseudonymsysCAClient(endpoint string) (*PseudonymsysCAClient, error) {
 	conn, err := client.GetConnection(endpoint, "", true)
 	if err != nil {
 		return nil, err
