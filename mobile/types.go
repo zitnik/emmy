@@ -16,6 +16,34 @@ func NewCACertificate(blindedA, blindedB, r, s string) *CACertificate {
 	}
 }
 
+type CACertificateEC struct {
+	BlindedA *ECGroupElement
+	BlindedB *ECGroupElement
+	R        string
+	S        string
+}
+
+func NewCACertificateEC(bA, bB *ECGroupElement, r, s string) *CACertificateEC {
+	return &CACertificateEC{
+		BlindedA: bA,
+		BlindedB: bB,
+		R:        r,
+		S:        s,
+	}
+}
+
+type ECGroupElement struct {
+	X string
+	Y string
+}
+
+func NewECGroupElement(x, y string) *ECGroupElement {
+	return &ECGroupElement{
+		X: x,
+		Y: y,
+	}
+}
+
 type Pseudonym struct {
 	A string
 	B string
@@ -23,6 +51,18 @@ type Pseudonym struct {
 
 func NewPseudonym(a, b string) *Pseudonym {
 	return &Pseudonym{
+		A: a,
+		B: b,
+	}
+}
+
+type PseudonymEC struct {
+	A *ECGroupElement
+	B *ECGroupElement
+}
+
+func NewPseudonymEC(a, b *ECGroupElement) *PseudonymEC {
+	return &PseudonymEC{
 		A: a,
 		B: b,
 	}
