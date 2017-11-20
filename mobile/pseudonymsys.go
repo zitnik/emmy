@@ -31,6 +31,10 @@ func NewPseudonymsysClient(endpoint string) (*PseudonymsysClient, error) {
 	}, nil
 }
 
+func (c *PseudonymsysClient) GenerateMasterKey() string {
+	return c.client.GenerateMasterKey().String()
+}
+
 func (c *PseudonymsysClient) GenerateNym(userSecret string,
 	cert *CACertificate) (*Pseudonym, error) {
 	secret, _ := new(big.Int).SetString(userSecret, 10)
