@@ -95,7 +95,7 @@ func (c *PseudonymsysClient) ObtainCredential(userSecret string,
 }
 
 func (c *PseudonymsysClient) TransferCredential(orgName, userSecret string,
-	nymStr *Pseudonym, credential *Credential) (bool, error) {
+	nymStr *Pseudonym, credential *Credential) (string, error) {
 	secret, _ := new(big.Int).SetString(userSecret, 10)
 	a, _ := new(big.Int).SetString(nymStr.A, 10)
 	b, _ := new(big.Int).SetString(nymStr.B, 10)
@@ -105,7 +105,7 @@ func (c *PseudonymsysClient) TransferCredential(orgName, userSecret string,
 	BtG, _ := new(big.Int).SetString(credential.BToGamma, 10)
 	if secret == nil || a == nil || b == nil || atG == nil || btG == nil ||
 		AtG == nil || BtG == nil {
-		return false, fmt.Errorf("Error converting string arguments to big.Int")
+		return "", fmt.Errorf("Error converting string arguments to big.Int")
 	}
 
 	t1_a, _ := new(big.Int).SetString(credential.T1.A, 10)
@@ -113,7 +113,7 @@ func (c *PseudonymsysClient) TransferCredential(orgName, userSecret string,
 	t1_hash, _ := new(big.Int).SetString(credential.T1.Hash, 10)
 	t1_zAlpha, _ := new(big.Int).SetString(credential.T1.ZAlpha, 10)
 	if t1_a == nil || t1_b == nil || t1_hash == nil || t1_zAlpha == nil {
-		return false, fmt.Errorf("Transcript 1; Error converting string arguments to big.Int")
+		return "", fmt.Errorf("Transcript 1; Error converting string arguments to big.Int")
 	}
 	t1 := dlogproofs.NewTranscript(t1_a, t1_b, t1_hash, t1_zAlpha)
 
@@ -122,18 +122,18 @@ func (c *PseudonymsysClient) TransferCredential(orgName, userSecret string,
 	t2_hash, _ := new(big.Int).SetString(credential.T2.Hash, 10)
 	t2_zAlpha, _ := new(big.Int).SetString(credential.T2.ZAlpha, 10)
 	if t2_a == nil || t2_b == nil || t2_hash == nil || t2_zAlpha == nil {
-		return false, fmt.Errorf("Transcript 2; Error converting string arguments to big.Int")
+		return "", fmt.Errorf("Transcript 2; Error converting string arguments to big.Int")
 	}
 	t2 := dlogproofs.NewTranscript(t2_a, t2_b, t2_hash, t2_zAlpha)
 
 	pseudonym := pseudonymsys.NewPseudonym(a, b)
 	cred := pseudonymsys.NewCredential(atG, btG, AtG, BtG, t1, t2)
-	authenticated, err := c.client.TransferCredential(orgName, secret, pseudonym, cred)
+	sessionKey, err := c.client.TransferCredential(orgName, secret, pseudonym, cred)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
-	return authenticated, nil
+	return sessionKey.Value, nil
 }
 
 // Disconnect attempts to close the underlying client connection to gRPC server.
